@@ -1,5 +1,5 @@
 When I joined Komodo team as a cryptocondition (now rebranded as custom consensus) contract developer I was assigned my first task: to develop a 'Heir cryptocondition contract'. 
-My acquaintence with crypto conditions began with reading James Lee's book "Mastering Cryptoconditions". I spent a weekend on reading it and got the common idea what cc contracts are. 
+My acquaintance with crypto conditions began with reading James Lee's book "Mastering Cryptoconditions". I spent a weekend on reading it and got the common idea what cc contracts are. 
 But the whole scale of cc contract features and opportunities were uncovered to me later when I implemented the validation code for my Heir cc contract.
 
 Now I'd like to share my experience with developers who want to create very efficient and powerful custom consensus contracts to help them get the matter of what custom consensus contracts are, what they can do and how to develop them.
@@ -514,6 +514,44 @@ For CCunspents function to work komodod init parameters `addressindex` and `spen
 
 ### Txidaddress pattern
 Txidaddress pattern might be used when you need to send some value to an address which never could be spent. For this there is a function to get an address for which no private key ever exists
+In payments CC we use this for a spendable address, by using:
+CTxOut MakeCC1of2vout(uint8_t evalcode,CAmount nValue,CPubKey pk1,CPubKey pk2, std::vector<std::vector<unsigned char>>* vData)
+
+For the merge RPC we use the vData optional parameter to append the op_return directly to the ccvout itself, rather than an actual op_return as the last vout in a transaction. Like so: 
+```
+opret = EncodePaymentsMergeOpRet(createtxid);
+std::vector<std::vector<unsigned char>> vData = std::vector<std::vector<unsigned char>>();
+if ( makeCCopret(opret, vData) )
+    mtx.vout.push_back(MakeCC1of2vout(EVAL_PAYMENTS,inputsum-PAYMENTS_TXFEE,Paymentspk,txidpk,&vData));
+GetCCaddress1of2(cp,destaddr,Paymentspk,txidpk);
+CCaddr1of2set(cp,Paymentspk,txidpk,cp->CCpriv,destaddr);
+rawtx = FinalizeCCTx(0,cp,mtx,mypk,PAYMENTS_TXFEE,CScript());
+```
+This allows a payments ccvout to be spent back to its own address, without needing a markervout or an OP_RETURN by using a modification made to IsPaymentsvout:
+```
+int64_t IsPaymentsvout(struct CCcontract_info *cp,const CTransaction& tx,int32_t v,char *cmpaddr, CScript &ccopret)
+{
+    char destaddr[64];
+    if ( getCCopret(tx.vout[v].scriptPubKey, ccopret) )
+    {
+        if ( Getscriptaddress(destaddr,tx.vout[v].scriptPubKey) > 0 && (cmpaddr[0] == 0 || strcmp(destaddr,cmpaddr) == 0) )
+            return(tx.vout[v].nValue);
+    }
+    return(0);
+}
+```
+ 
+In place of IsPayToCryptoCondition we can use getCCopret function which is a lower level of the former call, that will return us any vData appended to the ccvout along with true/false for IsPayToCryptoCondition. 
+In validation we now have a totally diffrent transaction type than exists allowing to have diffrent validation paths for diffrent ccvouts. And also allowing multiple ccvouts of diffrent types per transaction.
+``` 
+if ( tx.vout.size() == 1 )
+{
+    if ( IsPaymentsvout(cp,tx,0,coinaddr,ccopret) != 0 && ccopret.size() > 2 && DecodePaymentsMergeOpRet(ccopret,createtxid) )
+    {
+        fIsMerge = true;
+    } else return(eval->Invalid("not enough vouts"));
+}
+```
 
 ## Various tip and trick in cc contract development
 ### Test chain mining issue
