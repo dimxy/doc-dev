@@ -421,21 +421,21 @@ go through the returned uxtos and add appropriate ones to the transaction's vin 
          uint256 hashBlock;
          std::vector<uint8_t> vopret;
 ```
-Load uxto's transaction and check it has opreturn: 
+Load an uxto's transaction and check it has an opreturn in the back of array of outputs: 
 ```
          if (GetTransaction(it->first.txhash, tx, hashBlock, false) && tx.vout.size() > 0 && GetOpreturn(tx.back().scriptPubKey, vopret) && vopret.size() > 2)
          {
               uint8_t evalCode, funcId, hasHeirSpendingBegun;
               uint256 txid;
 ```
-Check if this is uxto from the correct funding plan: 
+Check if the uxto is from this funding plan: 
 ```
               if( it->first.txhash == fundingtxid ||   // if this is our contract instance coins 
                   E_UNMARSHAL(vopret, { ss >> evalCode; ss >> funcId; ss >> txid >> hasHeirSpendingBegun; }) && // unserialize opreturn
                   fundingtxid == txid  ) // it is a tx from this funding plan
               {
 ```
-add found and checked uxto to the transaction's vins, that is set the txid and vout number of the transaction providing the uxto (pass empty CScript() to scriptSig param, it will be filled by FinalizeCCtx):
+Add found and checked uxto to the transaction's vins, that is, set the txid and vout number of the transaction providing the uxto. Pass empty CScript() to scriptSig param, it will be filled by FinalizeCCtx:
 ```
                   mtx.vin.push_back(CTxIn(txid, voutIndex, CScript()));
                   totalinputs += it->second.satoshis;    
