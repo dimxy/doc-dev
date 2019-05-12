@@ -414,28 +414,28 @@ Call the cc sdk function SetCCunspents that fills the provider vector with a lis
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue>> unspentOutputs;
     SetCCunspents(unspentOutputs, coinaddr, true);  // get a vector of uxtos for the address in coinaddr[]
 ```
-go through the returned uxtos and add appropriate ones to the transaction's vin array:
+Go through the returned uxtos and add appropriate ones to the transaction's vin array:
 ```
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue>>::const_iterator it = unspentOutputs.begin(); it != unspentOutputs.end(); it++) {
          CTransaction tx;
          uint256 hashBlock;
          std::vector<uint8_t> vopret;
 ```
-Load an uxto's transaction and check it has an opreturn in the back of array of outputs: 
+load current uxto's transaction and check if it has an opreturn in the back of array of outputs: 
 ```
          if (GetTransaction(it->first.txhash, tx, hashBlock, false) && tx.vout.size() > 0 && GetOpreturn(tx.back().scriptPubKey, vopret) && vopret.size() > 2)
          {
               uint8_t evalCode, funcId, hasHeirSpendingBegun;
               uint256 txid;
 ```
-Check if the uxto is from this funding plan: 
+check if the uxto is from this funding plan: 
 ```
               if( it->first.txhash == fundingtxid ||   // if this is our contract instance coins 
                   E_UNMARSHAL(vopret, { ss >> evalCode; ss >> funcId; ss >> txid >> hasHeirSpendingBegun; }) && // unserialize opreturn
                   fundingtxid == txid  ) // it is a tx from this funding plan
               {
 ```
-Add found and checked uxto to the transaction's vins, that is, set the txid and vout number of the transaction providing the uxto. Pass empty CScript() to scriptSig param, it will be filled by FinalizeCCtx:
+add the uxto to the transaction's vins, that is, set the txid and vout number of the transaction providing the uxto. Pass empty CScript() to scriptSig param, it will be filled by FinalizeCCtx:
 ```
                   mtx.vin.push_back(CTxIn(txid, voutIndex, CScript()));
                   totalinputs += it->second.satoshis;    
