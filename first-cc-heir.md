@@ -91,7 +91,7 @@ This eval code is actually a simple cryptocondition which is a byte value and is
 ### CC contract transaction structure
 Here on the diagram is a cc contract transaction structure sample.
 
-![cc tx structure](https://github.com/dimxy/images/blob/master/cc-tx-structure-for-guide-v6.png)
+![cc tx structure](https://github.com/dimxy/images/blob/master/cc-tx-structure-for-guide-v7.png)
 
 We can see on the diagram that cc transaction has one or more cryptocondition inputs (or vins) and one or more cryptocondition outputs (or vouts). 
 A cc input with cryptocondition contain the txid of a previous transaction which cc output is spent and a cryptocondition fulfillment which is evaluated when this tx is added to the blockchain. The previous tx cc output has the corresponding cryptocondition which value should match to the evaluated input cryptocondition fulfillment while validation occurs.
@@ -422,9 +422,9 @@ We use a special flag hasHeirSpendingBegun that is turned to 1 when the heir fir
 That means that it is no need further in checking the owner's inactivity time
 Once set to 'true' this flag should be set to true in the following transaction opreturns
 
-#### heiradd implementation
-heiradd rpc allows to add more funding to the contract plan.
-Its implementation can be found in the github repository with the source code of this contract. 
+#### heiradd, heirlist and heirinfo implementation
+heiradd rpc allows to add more funding to the contract plan. heirlist is a standard rpc method for all cc contracts and output a list of all initial txids (funding plans).heirinfo provides some data about a funding plan. 
+The implementation for these rpcs can be found in the github repository with the source code of this contract. 
 
 #### Simplified Add1of2AddressInputs function implementation
 ```
@@ -588,7 +588,7 @@ Return found the latest owner transaction id:
 #### Simplified validation function implementation
 TODO...
 
-### link to heir cc source code
+### link to heir cc contract source code
 The complete working example of this simplified heir cc contract vesion is here:
 https://github.com/dimxy/komodo/tree/heir-simple
 
