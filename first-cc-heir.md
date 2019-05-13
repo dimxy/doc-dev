@@ -466,7 +466,7 @@ Add the uxto to the transaction's vins, that is, set the txid of the transaction
                   totalinputs += it->second.satoshis;   
 ```
 Stop if sufficient cc inputs found.
-And if amount == 0 that would mean to add all available funds to calculate total
+And if amount == 0 that would mean to add all available funds to calculate all available funds
 ```
                   if( amount > 0 && totalinputs >= amount || ++count > maxinputs )
                       break;
@@ -518,7 +518,7 @@ Return empty id if the fundind tx is incorrect:
 ```
         return zeroid;
 ```   
-Init cc heir contract object:
+Init cc contract object for heir contract eval code:
 ```
     struct CCcontract_info *cp, C;
     cp = CCinit(&C, EVAL_HEIR);
