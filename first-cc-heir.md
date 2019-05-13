@@ -372,7 +372,8 @@ Use a developed helper FindLatestOwnerTx function which returns the lastest txid
         return "";
     }
 ```
-Now check if the inactivity time has passed from the last owner transaction.Use cc sdk function which returns time in seconds from the block with the txid in the params to the chain tip block:
+Now check if the inactivity time has passed from the last owner transaction. Use cc sdk function which returns time in seconds from the block with the txid in the params to the chain tip block.
+If hasHeirSpendingBegun is set then no need to check again the owner inactivity time:
 ```
     int32_t numBlocks; // not used
     bool isAllowedToHeir = (hasHeirSpendingBegun || CCduration(numBlocks, latesttxid) > inactivityTimeSec) ? true : false;
@@ -392,12 +393,12 @@ add normal inputs for txfee:
 
 ```
 Add cc inputs for the requested amount.
-first get the address of 1 of 2 cryptocondition output where the fund was deposited:
+first get the address of the 1 of 2 threshold cryptocondition output where the funds were deposited:
 ```
     char coinaddr[65];
     GetCCaddress1of2(cp, coinaddr, ownerPubkey, heirPubkey);
 ```
-add inputs for this address with use of a custom function:
+Add cc inputs for this address with use of a custom function:
 ```
     int64_t inputs;
     if( (inputs = Add1of2AddressInputs(mtx, fundingtxid, coinaddr, amount, 64)) < amount )   {
@@ -417,6 +418,10 @@ Add normal change if any, add opreturn data and sign the transaction:
 
 }         
 ```
+
+#### heiradd implementation
+heiradd rpc allows to add more funding to the contract plan.
+Its implementation can be found in the github repository with the source code of this contract. 
 
 #### Simplified Add1of2AddressInputs function implementation
 ```
@@ -455,9 +460,14 @@ Check if the uxto is from this funding plan:
 Add the uxto to the transaction's vins, that is, set the txid of the transaction and vout number providing the uxto. Pass empty CScript() to scriptSig param, it will be filled by FinalizeCCtx:
 ```
                   mtx.vin.push_back(CTxIn(txid, it->first.index, CScript()));
-                  totalinputs += it->second.satoshis;    
-                  if( totalinputs >= amount || ++count > maxinputs )
+                  totalinputs += it->second.satoshis;   
+```
+Stop if sufficient inputs found.
+And if amount == 0 that would mean to add all available funds to calculate total
+```
+                  if( amount > 0 && totalinputs >= amount || ++count > maxinputs )
                       break;
+		      
               }
          } 
     }
@@ -470,8 +480,9 @@ Return the total inputs amount which has been added:
 #### Simplified FindLatestOwnerTx implementation
 
 To calculate the owner inactivity time and to enable the heir to send the funds we need a function which enumerates transactions from the contract funding plan and finds the latest owner transaction.
-This is this function implementation. The input parameter passed into it is initial funding txid. The function returns the owner and heir pubkeys, owner inactivity time and a flag if heir has already spent the funds. All returned values are retrieved from opreturns. 
+This is this function implementation. The input parameter passed into it is initial funding txid. The function returns the owner and heir pubkeys, the owner inactivity time and a flag if the heir has already spent the funds. 
 
+All returned values are retrieved from tx opreturns. 
 
 ```
 // find the latest owner transaction id
@@ -480,9 +491,13 @@ This is this function implementation. The input parameter passed into it is init
 uint256 FindLatestOwnerTx(uint256 fundingtxid, CPubKey& ownerPubkey, CPubKey& heirPubkey, int64_t& inactivityTime, uint8_t &hasHeirSpendingBegun)
 {
     uint8_t eval, funcId;
-   
+```
+Initialize the flag as if the heir has not begun to spend the funds yet:
+```
     hasHeirSpendingBegun = 0; 
-
+```
+Init some variables:
+```
     CTransaction fundingtx;
     uint256 hashBlock;
     std::vector<uint8_t> vopret;
@@ -497,21 +512,21 @@ Load the initial funding tx, check if it has an opreturn and deserialize it:
         eval != EVAL_HEIR || 
         funcId != 'F')
 ```
-Return empty id if the fundind tx is incorrect
+Return empty id if the fundind tx is incorrect:
 ```
         return zeroid;
 ```   
-init cc contract object:
+Init cc heir contract object:
 ```
     struct CCcontract_info *cp, C;
     cp = CCinit(&C, EVAL_HEIR);
 ```
-Get the address of cryptocondition '1 of 2 pubkeys':
+Get the address of cryptocondition '1 of 2 pubkeys' into coinaddr array (where the fund is stored):
 ```       
     char coinaddr[64];
     GetCCaddress1of2(cp, coinaddr, ownerPubkey, heirPubkey); 
 ```
-Get the vector with uxtos for 1of2 address:
+Get the vector with uxtos for the `1 of 2 address`:
 ```
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue>> unspentOutputs;    
     SetCCunspents(unspentOutputs, coinaddr, true);				 
@@ -530,8 +545,8 @@ Go through uxto's to find the last funding or spending owner tx:
 
         int32_t blockHeight = (int32_t)it->second.blockHeight;
 ```
-Get a transaction from the returned array
-unmarshal its opret and check if this is a tx from this funding plan
+Get a transaction from the returned array,
+unmarshal its opret and check if this is a tx from this funding plan:
 ```
         if (myGetTransaction(it->first.txhash, vintx, blockHash) &&     // NOTE: use non-locking version of GetTransaction as we may be called from validation code
             vintx.vout.size() > 0 &&
@@ -565,7 +580,7 @@ Reset the lastest txid to this txid if this is owner's activity:
         }
     }
 ```
-Return found latest owner transaction id
+Return found the latest owner transaction id:
 ```
     return latesttxid;
 }
