@@ -360,7 +360,7 @@ Next, init the cc contract object:
     cp = CCinit(&C, EVAL_HEIR);
 ```
 Now we need to find the latest owner transaction to calculate the owner's inactivity time:
-Use a developed helper FindLatestOwnerTx function which returns the lastest txid, heir public key and the hasHeirSpendingBegun flag value:
+Use a developed helper FindLatestOwnerTx function which returns the lastest txid, the owner and heir public keys, inactivity time setting value and the hasHeirSpendingBegun flag value:
 ```
     const int64_t txfee = 10000;
     CPubKey ownerPubkey, heirPubkey;
@@ -415,9 +415,12 @@ Now add an normal output to send claimed funds to and cc change output for the f
 Add normal change if any, add opreturn data and sign the transaction:
 ```
      return FinalizeCCTx(0, cp, mtx, myPubkey, txfee, CScript() << OP_RETURN << E_MARSHAL(ss << (uint8_t)EVAL_HEIR << (uint8_t)'C' << fundingtxid << (myPubkey == heirPubkey ? (uint8_t)1 : hasHeirSpendingBegun)));
-
-}         
+}
 ```
+In the opreturn we just added a pair of standard ids: cc eval code and functional id plus the fundingtxid as the funding plan identifier
+We use a special flag hasHeirSpendingBegun that is turned to 1 when the heir first time spends funds. 
+That means that it is no need further in checking the owner's inactivity time
+Once set to 'true' this flag should be set to true in the following transaction opreturns
 
 #### heiradd implementation
 heiradd rpc allows to add more funding to the contract plan.
@@ -457,22 +460,21 @@ Check if the uxto is from this funding plan:
                   fundingtxid == txid  ) // it is a tx from this funding plan
               {
 ```
-Add the uxto to the transaction's vins, that is, set the txid of the transaction and vout number providing the uxto. Pass empty CScript() to scriptSig param, it will be filled by FinalizeCCtx:
+Add the uxto to the transaction's vins, that is, set the txid of the transaction and vout number providing the uxto. Pass empty CScript() to scriptSig param because it will be filled by FinalizeCCtx:
 ```
-                  mtx.vin.push_back(CTxIn(txid, it->first.index, CScript()));
+                  mtx.vin.push_back(CTxIn(it->first.txhash, it->first.index, CScript()));
                   totalinputs += it->second.satoshis;   
 ```
-Stop if sufficient inputs found.
+Stop if sufficient cc inputs found.
 And if amount == 0 that would mean to add all available funds to calculate total
 ```
                   if( amount > 0 && totalinputs >= amount || ++count > maxinputs )
                       break;
-		      
               }
          } 
     }
 ```
-Return the total inputs amount which has been added:
+Return the total inputs amount which has been added to the transaction vin array:
 ```
     return totalinputs;
 }
@@ -546,7 +548,7 @@ Go through uxto's to find the last funding or spending owner tx:
         int32_t blockHeight = (int32_t)it->second.blockHeight;
 ```
 Get a transaction from the returned array,
-unmarshal its opret and check if this is a tx from this funding plan:
+check and unmarshal its opret and check if the current tx is from this funding plan:
 ```
         if (myGetTransaction(it->first.txhash, vintx, blockHash) &&     // NOTE: use non-locking version of GetTransaction as we may be called from validation code
             vintx.vout.size() > 0 &&
@@ -561,20 +563,17 @@ As SetCCunspents function returns uxtos not in the chronological order we need t
             if (blockHeight > maxBlockHeight) {
 
 ```
-Now check if this tx was owner's activity:
-verify if the tx was signed with owner's pubkey using cc sdk function:
+Now check if this tx was the owner's activity:
+use pair of cc sdk functions that walk through vin array and find if the tx was signed with the owner's pubkey:
 ```
-                bool isOwnerTx = false;
-                for (auto vin : vintx.vin) 
-                    if( ownerPubkey == check_signing_pubkey(vin.scriptSig) )
-                        isOwnerTx = true;
+                if (TotalPubkeyNormalInputs(vintx, ownerPubkey) > 0 || TotalPubkeyCCInputs(vintx, ownerPubkey) > 0) {
 ```
-Reset the lastest txid to this txid if this is owner's activity:
+Reset the lastest txid to this current txid if this tx is owner's activity,
+set the flag from the tx opretun:
 ```
-                if (isOwnerTx) {
-                    hasHeirSpendingBegun = flagopret;
-                    maxBlockHeight = blockHeight;
                     latesttxid = it->first.txhash;
+		    hasHeirSpendingBegun = flagopret;
+                    maxBlockHeight = blockHeight;
                 }
             }
         }
