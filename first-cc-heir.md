@@ -180,8 +180,9 @@ where 'amount' is coins going to the initial tx vout.1, 'name' is some descripti
 Now let's write some code for this rpc.
 
 To add a new command to komodo-cli we need to change source file src/server.cpp: add a new element to vRPCCommands array:
-
-`	{ "heir",       "heirfund",   &heirfund,      true },`
+```
+    { "heir",       "heirfund",   &heirfund,      true },
+```
 
 where "heir" is a common name for all heir contract rpc calls
 "heirfund" is the name of the new command and '&heirfund' is the address of rpc interface function,
@@ -189,13 +190,14 @@ true means that the command description will be shown in the help command output
 
 It is also necessary to add `heirfund` rpc function definition into the rpc/server.h source file. All rpc functions have pretty much the same declaration `UniValue heirfund(const UniValue& params, bool fHelp)`.
 
-An rpc function implementation is actually two-level.
-The first level is short rpc function itself like `heirfund`. Its body is added in an rpc source file in rpc/ subdirectory. It is short and just checks rpc parameters and needed environment and forward the call to the transacion creation code.
-I created rpc-level code in the wallet/rpcwallet.cpp file although it is much better to create a new rpc source file for this functions.
+An rpc command implementation is actually two-level.
+The first level is short rpc function which name matches to the rpc command name itself like `heirfund`. Its body is created in rpc source file in rpc/ subdirectory. It is short and just checks rpc parameters and needed environment and forward the call to the transaction creation code what is the second level.
+
+I created rpc-level code in the wallet/rpcwallet.cpp file although it is much better to create a new rpc source file for each new cc contract's rpc functions.
 
 First rpc-level implementation
 ```
-// heirfund command rpc-level implementation
+// heirfund command rpc-level implementation, src/wallet/rpcwallet.cpp
 UniValue heirfund(const UniValue& params, bool fHelp)
 {
     CCerror.clear(); // clear global error object
@@ -234,7 +236,7 @@ And now time to call the heir cc contract code and pass the returned created tx 
 The second implementation level is located in the heir cc contract source file src/heir.cpp.
 Here is the skeleton of the heirfund rpc implementation.
 ```
-// heirfund transacion creation code
+// heirfund transacion creation code, src/cc/heir.cpp
 std::string HeirFund(int64_t amount, std::string heirName, CPubKey heirPubkey, int64_t inactivityTimeSec)
 {
 ```
@@ -271,11 +273,12 @@ MakeCC1vout creates a vout with a simple cryptocondition which sends a txfee to 
 You will always need some kind of marker for any cc contract at least for the initial transaction, otherwise you might lose contract's data in blockchain.
 We may call this as **marker pattern** in cc development. See more about the marker pattern later in the CC contract patterns section.
 
-Finishing the creation of the transaction by calling FinalizeCCTx with params of the mtx object itself, the owner pubkey, txfee amount. 
+Finishing the creation of the transaction by calling FinalizeCCTx with params of the cp object, mtx object itself, the owner pubkey, txfee amount. 
+Note the cast to uint8_t for the constants EVAL_HEIR and 'F' funcid, this is important as it is supposed one-byte size for serialization of these values (otherwise they would be 'int'). 
 Also an opreturn object with the contract data is passed which is created by serializing the needed ids and variables to a CScript object.
 ```
         std::string rawhextx = FinalizeCCTx(0, cp, mtx, myPubkey, txfee,
-            CScript() << E_MARSHAL(ss << (uint8_t)EVAL_HEIR << (uint8_t)'F' << myPubkey << heirPubkey << inactivityTimeSec << heirName));
+            CScript() << OP_RETURN << (uint8_t)EVAL_HEIR << (uint8_t)'F' << myPubkey << heirPubkey << inactivityTimeSec << heirName));
         return rawhextx;
     }
 ```
@@ -301,16 +304,16 @@ the heirclaim rpc call will be very simple:
 komodo-cli -ac_name=YOURCHAIN heirclaim fundingtxid amount
 ```
 
-
 Add a new command to komodo-cli by adding a new element in to vRPCCommands array in the source file src/server.cpp::
-
-`	{ "heir",       "heirclaim",   &heirclaim,      true },`
+```
+    { "heir",       "heirclaim",   &heirclaim,      true },
+```
 
 Add a heirclaim rpc call implementation (in rpc/wallet.cpp)
 Add the heirclaim declaration in rpc/server.h header file.
 
 ```
-// heirclaim command rpc-level implementation 
+// heirclaim command rpc-level implementation, src/wallet/rpcwallet.cpp 
 UniValue heirclaim(const UniValue& params, bool fHelp)
 {
     CCerror.clear(); // clear global error object
@@ -326,7 +329,7 @@ Also check that cc contract requirements are satisfied:
     if (ensure_CCrequirements(EVAL_HEIR) < 0)
 	throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
 ```
-Lock the wallet
+Lock the wallet:
 ```
     LOCK2(cs_main, pwalletMain->cs_wallet);
 ```
@@ -341,12 +344,14 @@ Convert the parameters from UniValue to c++ types and call the tx creation funct
 }
 ```
 
-Now implement the tx creation code (second level).
-Start with creating a mutable transaction object:
+Now implement the tx creation code.
 ```
-// heirclaim transaction creation
+// heirclaim transaction creation function, src/cc/heir.cpp
 std::string HeirClaim(uint256 fundingtxid, int64_t amount)
 {
+```
+Start with creating a mutable transaction object:
+```
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
 ```
 Next, init the cc contract object:
@@ -355,8 +360,9 @@ Next, init the cc contract object:
     cp = CCinit(&C, EVAL_HEIR);
 ```
 Now we need to find the latest owner transaction to calculate the owner's inactivity time:
-Use a helper FindLatestOwnerTx function which returns the lastest txid, heir public key and the hasHeirSpendingBegun flag value:
+Use a developed helper FindLatestOwnerTx function which returns the lastest txid, heir public key and the hasHeirSpendingBegun flag value:
 ```
+    const int64_t txfee = 10000;
     CPubKey ownerPubkey, heirPubkey;
     int64_t inactivityTimeSec;
     uint8_t hasHeirSpendingBegun;    
@@ -366,11 +372,11 @@ Use a helper FindLatestOwnerTx function which returns the lastest txid, heir pub
         return "";
     }
 ```
-Now check if inactivity time has reached from the last owner transaction. Use cc sdk function which returns time in seconds from the block with the txid in the params:
+Now check if the inactivity time has passed from the last owner transaction.Use cc sdk function which returns time in seconds from the block with the txid in the params to the chain tip block:
 ```
     int32_t numBlocks; // not used
     bool isAllowedToHeir = (hasHeirSpendingBegun || CCduration(numBlocks, latesttxid) > inactivityTimeSec) ? true : false;
-    CPubKey myPubkey = pubkey2pk(Mypubkey());  // pubkey2pk sdk function convert pubkey from byte array to high-level CPubKey object
+    CPubKey myPubkey = pubkey2pk(Mypubkey());  // pubkey2pk sdk function converts pubkey from a byte array to CPubKey object
     if( myPubkey == heirPubkey && !isAllowedToHeir )    {
         CCerror = "spending funds is not allowed for heir yet";
         return "";
@@ -386,12 +392,12 @@ add normal inputs for txfee:
 
 ```
 Add cc inputs for the requested amount.
-first get the address 1 of 2 cryptocondition where the fund was deposited:
+first get the address of 1 of 2 cryptocondition output where the fund was deposited:
 ```
     char coinaddr[65];
     GetCCaddress1of2(cp, coinaddr, ownerPubkey, heirPubkey);
 ```
-and add inputs for this address with an additional custom function:
+add inputs for this address with use of a custom function:
 ```
     int64_t inputs;
     if( (inputs = Add1of2AddressInputs(mtx, fundingtxid, coinaddr, amount, 64)) < amount )   {
@@ -399,21 +405,22 @@ and add inputs for this address with an additional custom function:
         return "";
     }
 ```
-Now add an normal output to send claimed funds to and cc change output for fund remainder:
+Now add an normal output to send claimed funds to and cc change output for the fund remainder:
 ```
     mtx.vout.push_back(CTxOut(amount, CScript() << ParseHex(HexStr(myPubkey)) << OP_CHECKSIG));  
     if (inputs > amount)
         mtx.vout.push_back(MakeCC1of2vout(EVAL_HEIR, inputs - amount, ownerPubkey, heirPubkey));  
 ```
-add normal change if any, add opreturn data and sign the transaction
+Add normal change if any, add opreturn data and sign the transaction:
 ```
-     return FinalizeCCTx(0, cp, mtx, myPubkey, txfee, CScript() << E_MARSHAL(ss << (uint8_t)EVAL_HEIR << (uint8_t)'C' << fundingtxid << (myPubkey == heirPubkey) ? (uint8_t)1 : hasHeirSpendingBegun));
+     return FinalizeCCTx(0, cp, mtx, myPubkey, txfee, CScript() << OP_RETURN << E_MARSHAL(ss << (uint8_t)EVAL_HEIR << (uint8_t)'C' << fundingtxid << (myPubkey == heirPubkey ? (uint8_t)1 : hasHeirSpendingBegun)));
+
 }         
 ```
 
 #### Simplified Add1of2AddressInputs function implementation
 ```
-// add inputs from cc threshold=2 cryptocondition address to transaction object
+// add inputs from cc threshold=2 cryptocondition address to transaction object, src/cc/heir.cpp
 int64_t Add1of2AddressInputs(CMutableTransaction &mtx, uint256 fundingtxid, char *coinaddr, int64_t amount, int32_t maxinputs)
 {
     int64_t totalinputs = 0L;
