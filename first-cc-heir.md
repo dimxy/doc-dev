@@ -468,11 +468,115 @@ Return the total inputs amount which has been added:
 }
 ```
 #### Simplified FindLatestOwnerTx implementation
-TODO...
 
+To calculate the owner inactivity time and to enable the heir to send the funds we need a function which enumerates transactions from the contract funding plan and finds the latest owner transaction.
+This is this function implementation. The input parameter passed into it is initial funding txid. The function returns the owner and heir pubkeys, owner inactivity time and a flag if heir has already spent the funds. All returned values are retrieved from opreturns. 
+
+
+```
+// find the latest owner transaction id
+// this function also returns some values from the initial and latest transaction opreturns
+// Note: this function is also called from validation code (use non-locking calls)
+uint256 FindLatestOwnerTx(uint256 fundingtxid, CPubKey& ownerPubkey, CPubKey& heirPubkey, int64_t& inactivityTime, uint8_t &hasHeirSpendingBegun)
+{
+    uint8_t eval, funcId;
+   
+    hasHeirSpendingBegun = 0; 
+
+    CTransaction fundingtx;
+    uint256 hashBlock;
+    std::vector<uint8_t> vopret;
+    std::string name;
+```
+Load the initial funding tx, check if it has an opreturn and deserialize it:
+```
+    if (!myGetTransaction(fundingtxid, fundingtx, hashBlock) ||  // NOTE: use non-locking version of GetTransaction as we may be called from validation code
+        fundingtx.vout.size() == 0 ||
+        !GetOpReturnData(fundingtx.vout.back().scriptPubKey, vopret) ||
+        !E_UNMARSHAL(vopret, ss >> eval; ss >> funcId; ss >> ownerPubkey; ss >> heirPubkey; ss >> inactivityTime; ss >> name;) ||
+        eval != EVAL_HEIR || 
+        funcId != 'F')
+```
+Return empty id if the fundind tx is incorrect
+```
+        return zeroid;
+```   
+init cc contract object:
+```
+    struct CCcontract_info *cp, C;
+    cp = CCinit(&C, EVAL_HEIR);
+```
+Get the address of cryptocondition '1 of 2 pubkeys':
+```       
+    char coinaddr[64];
+    GetCCaddress1of2(cp, coinaddr, ownerPubkey, heirPubkey); 
+```
+Get the vector with uxtos for 1of2 address:
+```
+    std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue>> unspentOutputs;    
+    SetCCunspents(unspentOutputs, coinaddr, true);				 
+```
+Go through uxto's to find the last funding or spending owner tx:
+```
+    int32_t maxBlockHeight = 0; 
+    uint256 latesttxid = fundingtxid;   // set to initial txid
+    for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue>>::const_iterator it = unspentOutputs.begin(); it != unspentOutputs.end(); it++)
+    {
+        CTransaction vintx;
+        uint256 blockHash;
+        std::vector<uint8_t> vopret;
+        uint8_t eval, funcId, flagopret;
+        uint256 txidopret;
+
+        int32_t blockHeight = (int32_t)it->second.blockHeight;
+```
+Get a transaction from the returned array
+unmarshal its opret and check if this is a tx from this funding plan
+```
+        if (myGetTransaction(it->first.txhash, vintx, blockHash) &&     // NOTE: use non-locking version of GetTransaction as we may be called from validation code
+            vintx.vout.size() > 0 &&
+            GetOpReturnData(vintx.vout.back().scriptPubKey, vopret) &&
+            E_UNMARSHAL(vopret, ss >> eval; ss >> funcId; ss >> txidopret; ss >> flagopret) &&
+            eval == EVAL_HEIR &&
+            (funcId == 'C' || funcId == 'A') &&
+            fundingtxid == txidopret )   {
+```
+As SetCCunspents function returns uxtos not in the chronological order we need to order them by the block height as we need the latest one:
+```
+            if (blockHeight > maxBlockHeight) {
+
+```
+Now check if this tx was owner's activity:
+verify if the tx was signed with owner's pubkey using cc sdk function:
+```
+                bool isOwnerTx = false;
+                for (auto vin : vintx.vin) 
+                    if( ownerPubkey == check_signing_pubkey(vin.scriptSig) )
+                        isOwnerTx = true;
+```
+Reset the lastest txid to this txid if this is owner's activity:
+```
+                if (isOwnerTx) {
+                    hasHeirSpendingBegun = flagopret;
+                    maxBlockHeight = blockHeight;
+                    latesttxid = it->first.txhash;
+                }
+            }
+        }
+    }
+```
+Return found latest owner transaction id
+```
+    return latesttxid;
+}
+```
 
 #### Simplified validation function implementation
 TODO...
+
+### link to heir cc source code
+The complete working example of this simplified heir cc contract vesion is here:
+https://github.com/dimxy/komodo/tree/heir-simple
 
 ## Some used terminology
 
