@@ -195,6 +195,7 @@ I created rpc-level code in the wallet/rpcwallet.cpp file although it is much be
 
 First rpc-level implementation
 ```
+// heirfund command rpc-level implementation
 UniValue heirfund(const UniValue& params, bool fHelp)
 {
     CCerror.clear(); // clear global error object
@@ -219,7 +220,7 @@ Next convert the params from UniValue type to the basic c++ types.
     CPubKey heirpk = pubkey2pk(vheirpubkey);
     int64_t inactivitytime = atoll(params[3].get_str().c_str());
 ```
-We also need to add checking the converted param values are correct (what I ommitted in the sample), for example not negative or do not exceed some limit.
+We also need to add checks that the converted param values are correct (what I ommitted in this sample), for example not negative or not exceeding some limit.
 Note how to parse hex representation of the pubkey param and convert it to CPubKey object.
 
 And now time to call the heir cc contract code and pass the returned created tx in hexademical representation to the caller, ready to be sent to the chain:
@@ -232,19 +233,21 @@ And now time to call the heir cc contract code and pass the returned created tx 
 
 The second implementation level is located in the heir cc contract source file src/heir.cpp.
 Here is the skeleton of the heirfund rpc implementation.
-First, we need to create a mutable version of a transaction object.
 ```
+// heirfund transacion creation code
 std::string HeirFund(int64_t amount, std::string heirName, CPubKey heirPubkey, int64_t inactivityTimeSec)
 {
+```
+First, we need to create a mutable version of a transaction object.
+```
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
 ```
-
 Declare and initialize an CCcontract_info object with heir cc contract variables like cc global address, global private key etc.
 ```
     struct CCcontract_info *cp, C;
     cp = CCinit(&C, EVAL_HEIR);
 ```
-Next we need to add inputs to transaction enough to make deposit of the amount to the heir fund, marker and miners
+Next we need to add some inputs to transaction that are enough to make deposit of the requested amount to the heir fund, some fee for the marker and for miners.
 Let's use a constant fee = 10000 sat.
 We need the pubkey from the komodod -pubkey param.
 For adding normal inputs to the mutable transaction there is a corresponding function in the cc SDK. 
@@ -255,7 +258,7 @@ For adding normal inputs to the mutable transaction there is a corresponding fun
 ```
 The parameters passed to the AddNormalinputs() are the tx itself, my pubkey, total value for the funding amount, marker and miners fee, for which the function will add the necessary number of uxto from the user's wallet. The last parameter is the limit of uxto to add. 
 
-Now let's add outputs to the transaction. Accordingly to our specification we need the two outputs: for the funding deposit and marker
+Now let's add outputs to the transaction. Accordingly to our specification we need two outputs: for the funding deposit and marker
 ```
         mtx.vout.push_back( MakeCC1of2vout(EVAL_HEIR, amount, myPubkey, heirPubkey) );
         mtx.vout.push_back( MakeCC1vout(EVAL_HEIR, txfee, GetUnspendable(cp, NULL)) );
@@ -268,14 +271,15 @@ MakeCC1vout creates a vout with a simple cryptocondition which sends a txfee to 
 You will always need some kind of marker for any cc contract at least for the initial transaction, otherwise you might lose contract's data in blockchain.
 We may call this as **marker pattern** in cc development. See more about the marker pattern later in the CC contract patterns section.
 
-Finishing creation of the transaction by calling FinalizeCCTx with passing to it the mtx object, the owner pubkey, txfee amount. Also just created opreturn object with the contract data is passed. It is created by serializing the needed variables to the CScript object.
+Finishing the creation of the transaction by calling FinalizeCCTx with params of the mtx object itself, the owner pubkey, txfee amount. 
+Also an opreturn object with the contract data is passed which is created by serializing the needed ids and variables to a CScript object.
 ```
         std::string rawhextx = FinalizeCCTx(0, cp, mtx, myPubkey, txfee,
             CScript() << E_MARSHAL(ss << (uint8_t)EVAL_HEIR << (uint8_t)'F' << myPubkey << heirPubkey << inactivityTimeSec << heirName));
         return rawhextx;
     }
 ```
-Also, if AddNormalinputs cannot find sufficient owner coins for the requested fund amount plus txfee, set error object.
+Also, if AddNormalinputs could not find sufficient owner coins for the requested fund amount plus txfee, set error object.
 ```
     CCerror = "not enough coins for requested amount and txfee";
     return std::string("");
@@ -306,13 +310,14 @@ Add a heirclaim rpc call implementation (in rpc/wallet.cpp)
 Add the heirclaim declaration in rpc/server.h header file.
 
 ```
+// heirclaim command rpc-level implementation 
 UniValue heirclaim(const UniValue& params, bool fHelp)
 {
     CCerror.clear(); // clear global error object
 ```
-check that wallet is available. 
-if asked for help or param size incorrect return help message.
-Aslo check cc contract requirements are satisfied
+check that the wallet is available. 
+if asked for help or the param size is incorrect, return help message.
+Also check that cc contract requirements are satisfied:
 ```
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -325,7 +330,7 @@ Lock the wallet
 ```
     LOCK2(cs_main, pwalletMain->cs_wallet);
 ```
-convert the parameters from UniValue to c++ types and call tx creation function
+Convert the parameters from UniValue to c++ types and call the tx creation function and return the created tx in hexademical
 ```
     uint256 fundingtxid = Parseuint256((char*)params[0].get_str().c_str());
     CAmount amount = atof(params[1].get_str().c_str()) * COIN;  // Note conversion to satoshis by multiplication on 10E8
@@ -339,6 +344,7 @@ convert the parameters from UniValue to c++ types and call tx creation function
 Now implement the tx creation code (second level).
 Start with creating a mutable transaction object:
 ```
+// heirclaim transaction creation
 std::string HeirClaim(uint256 fundingtxid, int64_t amount)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
@@ -397,7 +403,7 @@ Now add an normal output to send claimed funds to and cc change output for fund 
 ```
     mtx.vout.push_back(CTxOut(amount, CScript() << ParseHex(HexStr(myPubkey)) << OP_CHECKSIG));  
     if (inputs > amount)
-        mtx.vout.push_back(MakeCC1of2vout(inputs - amount, ownerPubkey, heirPubkey));  
+        mtx.vout.push_back(MakeCC1of2vout(EVAL_HEIR, inputs - amount, ownerPubkey, heirPubkey));  
 ```
 add normal change if any, add opreturn data and sign the transaction
 ```
@@ -407,6 +413,7 @@ add normal change if any, add opreturn data and sign the transaction
 
 #### Simplified Add1of2AddressInputs function implementation
 ```
+// add inputs from cc threshold=2 cryptocondition address to transaction object
 int64_t Add1of2AddressInputs(CMutableTransaction &mtx, uint256 fundingtxid, char *coinaddr, int64_t amount, int32_t maxinputs)
 {
     int64_t totalinputs = 0L;
@@ -424,23 +431,23 @@ Go through the returned uxtos and add appropriate ones to the transaction's vin 
          uint256 hashBlock;
          std::vector<uint8_t> vopret;
 ```
-load current uxto's transaction and check if it has an opreturn in the back of array of outputs: 
+Load current uxto's transaction and check if it has an opreturn in the back of array of outputs: 
 ```
-         if (GetTransaction(it->first.txhash, tx, hashBlock, false) && tx.vout.size() > 0 && GetOpreturn(tx.back().scriptPubKey, vopret) && vopret.size() > 2)
+         if (GetTransaction(it->first.txhash, tx, hashBlock, false) && tx.vout.size() > 0 && GetOpReturnData(tx.vout.back().scriptPubKey, vopret) && vopret.size() > 2)
          {
               uint8_t evalCode, funcId, hasHeirSpendingBegun;
               uint256 txid;
 ```
-check if the uxto is from this funding plan: 
+Check if the uxto is from this funding plan: 
 ```
               if( it->first.txhash == fundingtxid ||   // if this is our contract instance coins 
                   E_UNMARSHAL(vopret, { ss >> evalCode; ss >> funcId; ss >> txid >> hasHeirSpendingBegun; }) && // unserialize opreturn
                   fundingtxid == txid  ) // it is a tx from this funding plan
               {
 ```
-add the uxto to the transaction's vins, that is, set the txid and vout number of the transaction providing the uxto. Pass empty CScript() to scriptSig param, it will be filled by FinalizeCCtx:
+Add the uxto to the transaction's vins, that is, set the txid of the transaction and vout number providing the uxto. Pass empty CScript() to scriptSig param, it will be filled by FinalizeCCtx:
 ```
-                  mtx.vin.push_back(CTxIn(txid, voutIndex, CScript()));
+                  mtx.vin.push_back(CTxIn(txid, it->first.index, CScript()));
                   totalinputs += it->second.satoshis;    
                   if( totalinputs >= amount || ++count > maxinputs )
                       break;
@@ -448,7 +455,7 @@ add the uxto to the transaction's vins, that is, set the txid and vout number of
          } 
     }
 ```
-Return the added total inputs amount:
+Return the total inputs amount which has been added:
 ```
     return totalinputs;
 }
