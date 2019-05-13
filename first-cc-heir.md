@@ -257,8 +257,8 @@ The parameters passed to the AddNormalinputs() are the tx itself, my pubkey, tot
 
 Now let's add outputs to the transaction. Accordingly to our specification we need the two outputs: for the funding deposit and marker
 ```
-        mtx.vout.push_back( MakeCC1of2vout(amount, myPubkey, heirPubkey) );
-        mtx.vout.push_back( MakeCC1vout(EVAL_HEIR, txfee, cp->GetUnspendable()) );
+        mtx.vout.push_back( MakeCC1of2vout(EVAL_HEIR, amount, myPubkey, heirPubkey) );
+        mtx.vout.push_back( MakeCC1vout(EVAL_HEIR, txfee, GetUnspendable(cp, NULL)) );
 ```
 In this example we used two cc sdk functions for creating cryptocondition vouts. 
 
@@ -269,12 +269,14 @@ You will always need some kind of marker for any cc contract at least for the in
 We may call this as **marker pattern** in cc development. See more about the marker pattern later in the CC contract patterns section.
 
 Finishing creation of the transaction by calling FinalizeCCTx with passing to it the mtx object, the owner pubkey, txfee amount. Also just created opreturn object with the contract data is passed. It is created by serializing the needed variables to the CScript object.
-Also, if AddNormalinputs cannot find owner funds set error object.
 ```
         std::string rawhextx = FinalizeCCTx(0, cp, mtx, myPubkey, txfee,
             CScript() << E_MARSHAL(ss << (uint8_t)EVAL_HEIR << (uint8_t)'F' << myPubkey << heirPubkey << inactivityTimeSec << heirName));
         return rawhextx;
     }
+```
+Also, if AddNormalinputs cannot find sufficient owner coins for the requested fund amount plus txfee, set error object.
+```
     CCerror = "not enough coins for requested amount and txfee";
     return std::string("");
 }
@@ -325,7 +327,7 @@ Lock the wallet
 ```
 convert the parameters from UniValue to c++ types and call tx creation function
 ```
-    fundingtxid = Parseuint256((char*)params[0].get_str().c_str());
+    uint256 fundingtxid = Parseuint256((char*)params[0].get_str().c_str());
     CAmount amount = atof(params[1].get_str().c_str()) * COIN;  // Note conversion to satoshis by multiplication on 10E8
 
     UniValue result = HeirClaimCaller(fundingtxid, amount);
@@ -349,9 +351,10 @@ Next, init the cc contract object:
 Now we need to find the latest owner transaction to calculate the owner's inactivity time:
 Use a helper FindLatestOwnerTx function which returns the lastest txid, heir public key and the hasHeirSpendingBegun flag value:
 ```
-    uint8_t hasHeirSpendingBegun;
     CPubKey ownerPubkey, heirPubkey;
-    uint256 latesttxid = FindLatestOwnerTx(fundingtxid, ownerPubkey, heirPubkey, hasHeirSpendingBegun);
+    int64_t inactivityTimeSec;
+    uint8_t hasHeirSpendingBegun;    
+    uint256 latesttxid = FindLatestOwnerTx(fundingtxid, ownerPubkey, heirPubkey, inactivityTimeSec, hasHeirSpendingBegun);
     if( latesttxid.IsNull() )   {
         CCerror = "no funding tx found";
         return "";
@@ -359,10 +362,10 @@ Use a helper FindLatestOwnerTx function which returns the lastest txid, heir pub
 ```
 Now check if inactivity time has reached from the last owner transaction. Use cc sdk function which returns time in seconds from the block with the txid in the params:
 ```
-    int32_t numblocks; // not used
+    int32_t numBlocks; // not used
     bool isAllowedToHeir = (hasHeirSpendingBegun || CCduration(numBlocks, latesttxid) > inactivityTimeSec) ? true : false;
     CPubKey myPubkey = pubkey2pk(Mypubkey());  // pubkey2pk sdk function convert pubkey from byte array to high-level CPubKey object
-    if( myPubkey == heirPubKey && !isAllowedToHeir )    {
+    if( myPubkey == heirPubkey && !isAllowedToHeir )    {
         CCerror = "spending funds is not allowed for heir yet";
         return "";
     }
