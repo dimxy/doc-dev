@@ -703,7 +703,7 @@ if ( tx.vout.size() == 1 )
 }
 ```
 
-## Various tip and trick in cc contract development
+## Various tips and tricks in cc contract development
 ### Test chain mining issue
 On a test chain consisting of two nodes do not mine on both nodes - the chain might get out of sync. It is recommended to have only one miner node for two-node test chains.
 
