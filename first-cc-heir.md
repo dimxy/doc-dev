@@ -269,8 +269,8 @@ In this example we used two cc sdk functions for creating cryptocondition vouts.
 
 MakeCC1of2vout creates a vout with a threshold=2 cryptocondition allowing to spend funds from this vout with either myPubkey (which would be the pubkey of the funds owner) or heir pubkey
 
-MakeCC1vout creates a vout with a simple cryptocondition which sends a txfee to cc Heir contract global address (returned by cp->GetUnspendable() function call). We need this output to be able to find all the created heir funding plans. 
-You will always need some kind of marker for any cc contract at least for the initial transaction, otherwise you might lose contract's data in blockchain.
+MakeCC1vout creates a vout with a simple cryptocondition which sends a txfee to cc Heir contract global address (returned by GetUnspendable() function call). We need this output to mark the transaction and be able to find all cc heir funding plans. 
+You will always need some kind of marker for any cc contract at least for contract's initial transaction, otherwise you might lose contract's data in blockchain.
 We may call this as **marker pattern** in cc development. See more about the marker pattern later in the CC contract patterns section.
 
 Finishing the creation of the transaction by calling FinalizeCCTx with params of the cp object, mtx object itself, the owner pubkey, txfee amount. 
