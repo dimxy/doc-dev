@@ -588,12 +588,15 @@ Return found the latest owner transaction id:
 #### Simplified validation function implementation
 TODO...
 
-### link to heir cc contract source code
+## link to heir cc contract source code
 The complete working example of this simplified heir cc contract vesion is here:
 https://github.com/dimxy/komodo/tree/heir-simple
 
-Instructions how to build source and run your Komodo asset chain is here:
+Instructions how to build Komodo binaries (including cc contracts) from the source code is here:
 https://docs.komodoplatform.com/komodo/installation.html#installing-komodo-on-ubuntu-debian 
+
+Instructions how to run your Komodo asset chain is here:
+https://docs.komodoplatform.com/basic-docs/installations/creating-asset-chains.html#creating-a-new-asset-chain
 
 ## Some used terminology
 
