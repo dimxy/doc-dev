@@ -592,6 +592,9 @@ TODO...
 The complete working example of this simplified heir cc contract vesion is here:
 https://github.com/dimxy/komodo/tree/heir-simple
 
+Instructions how to build source and run your Komodo asset chain is here:
+https://docs.komodoplatform.com/komodo/installation.html#installing-komodo-on-ubuntu-debian 
+
 ## Some used terminology
 
 Here is some terms and keywords which are used in the cc documentation, developers chats and cc contracts code 
