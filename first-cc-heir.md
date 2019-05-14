@@ -588,7 +588,7 @@ Return found the latest owner transaction id:
 #### Simplified validation function implementation
 TODO...
 
-## link to heir cc contract source code
+## Links to heir cc contract source code and building instructions
 The complete working example of this simplified heir cc contract vesion is here:
 https://github.com/dimxy/komodo/tree/heir-simple
 
