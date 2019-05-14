@@ -258,7 +258,7 @@ For adding normal inputs to the mutable transaction there is a corresponding fun
     CPubKey myPubkey = pubkey2pk(Mypubkey());   
     if (AddNormalinputs(mtx, myPubkey, amount+2*txfee , 60) > 0) { 
 ```
-The parameters passed to the AddNormalinputs() are the tx itself, my pubkey, total value for the funding amount, marker and miners fee, for which the function will add the necessary number of uxto from the user's wallet. The last parameter is the limit of uxto to add. 
+The parameters passed to the AddNormalinputs() are the tx itself, my pubkey, total value for the funding amount, marker and miners fees, for which the function will add the necessary quantity of uxto for the private key in the user's wallet. The last parameter is the limit of uxto to add. 
 
 Now let's add outputs to the transaction. Accordingly to our specification we need two outputs: for the funding deposit and marker
 ```
