@@ -465,8 +465,8 @@ Add the uxto to the transaction's vins, that is, set the txid of the transaction
                   mtx.vin.push_back(CTxIn(it->first.txhash, it->first.index, CScript()));
                   totalinputs += it->second.satoshis;   
 ```
-Stop if sufficient cc inputs found.
-And if amount == 0 that would mean to add all available funds to calculate all available funds
+Stop if sufficient cc inputs have been found.
+If amount parameter is 0 that would mean to add all available inputs to calculate all available fund amount
 ```
                   if( amount > 0 && totalinputs >= amount || ++count > maxinputs )
                       break;
