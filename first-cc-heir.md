@@ -590,7 +590,13 @@ TODO...
 
 ## Links to heir cc contract source code and building instructions
 The complete working example of this simplified heir cc contract vesion is here:
-https://github.com/dimxy/komodo/tree/heir-simple
+https://github.com/dimxy/komodo/tree/heir-simple, 
+The source files are:
+src/cc/heir.cpp
+src/cc/CCheir.h
+src/wallet/rpcwallet.cpp
+src/rpc/server.cpp
+src/rpc/server.h
 
 Instructions how to build Komodo binaries (including cc contracts) from the source code is here:
 https://docs.komodoplatform.com/komodo/installation.html#installing-komodo-on-ubuntu-debian 
