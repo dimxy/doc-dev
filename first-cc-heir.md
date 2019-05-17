@@ -216,7 +216,7 @@ and check the rpc params' required number:
 The UniValue object is a special type for passing data in rpc calls. Univalue params is actually an array of Univalue objects. We still need to convert them into usual c/c++ language types and pass to the contract implementation.
 Next convert the params from UniValue type to the basic c++ types. 
 ```
-    CAmount amount = atof(params[0].get_str().c_str()) * COIN;  // Note conversion to satoshis by multiplication on 10E8
+    CAmount amount = atof(params[0].get_str().c_str()) * COIN;  // Note conversion from satoshis to coins by multiplication by 10E8
     std::string name = params[1].get_str();
     std::vector<uint8_t> vheirpubkey = ParseHex(params[2].get_str().c_str());
     CPubKey heirpk = pubkey2pk(vheirpubkey);
@@ -236,7 +236,7 @@ And now time to call the heir cc contract code and pass the returned created tx 
 The second implementation level is located in the heir cc contract source file src/heir.cpp.
 Here is the skeleton of the heirfund rpc implementation.
 ```
-// heirfund transacion creation code, src/cc/heir.cpp
+// heirfund transaction creation code, src/cc/heir.cpp
 std::string HeirFund(int64_t amount, std::string heirName, CPubKey heirPubkey, int64_t inactivityTimeSec)
 {
 ```
@@ -336,7 +336,7 @@ Lock the wallet:
 Convert the parameters from UniValue to c++ types and call the tx creation function and return the created tx in hexademical
 ```
     uint256 fundingtxid = Parseuint256((char*)params[0].get_str().c_str());
-    CAmount amount = atof(params[1].get_str().c_str()) * COIN;  // Note conversion to satoshis by multiplication on 10E8
+    CAmount amount = atof(params[1].get_str().c_str()) * COIN;  // Note conversion from satoshis to coins by multiplication by 10E8
 
     UniValue result = HeirClaimCaller(fundingtxid, amount);
     RETURN_IF_ERROR(CCerror);  // use a macro to throw runtime_error if CCerror is set in HeirFund()
@@ -344,7 +344,7 @@ Convert the parameters from UniValue to c++ types and call the tx creation funct
 }
 ```
 
-Now implement the tx creation code.
+Now implement the claim tx creation code.
 ```
 // heirclaim transaction creation function, src/cc/heir.cpp
 std::string HeirClaim(uint256 fundingtxid, int64_t amount)
