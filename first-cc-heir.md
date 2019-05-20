@@ -597,8 +597,7 @@ So for the first cc contract initial transaction the validation code usually is 
 
 Not let's decide what validation we need for our simplified 'Heir' cc contract.
 
-Actually we have just tree transaction in this contract: initial funding, adding more value and claiming tx.
-As it was stated the inital tx could be validated together with the successive adding or claming transaction.
+Actually we have just tree transaction in this contract: initial funding, adding more value and claiming tx. As initian or adding tx do not have cc vins they are validated together with claming transaction.
 
 What needs to be validated? 
 
