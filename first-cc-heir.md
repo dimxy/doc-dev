@@ -604,19 +604,20 @@ What needs to be validated?
 
 Here is some common rules relevant to most contracts:
 
-* Obviously first is the basic transaction structure and especially basic data structure in opreturn to ensure data integrity in the chain.
+* Obviously the first is the basic transaction structure and especially basic data structure in opreturn to ensure data integrity in the chain.
 All opreturns should contain the eval code and functional id in the first two bytes. 
-* When validating a tx, please remember about possible attacks and do not allow DOS attacks if a tx is incorrectly formed, check array size before use of it. 
-* For the tx successors and tx being spent it is important to validated the txid in their opreturns which binds the tx to the contract instance data, so it should be equal to the initial txid.   
+* When validating a tx, please remember about possible attacks and do not allow DOS attacks if a tx is incorrectly formed, check array size before use of it.
+* Load and check the initial tx for this tx by retrieving the txid from the opreturn and load the initial tx.
 
 The specific rules for 'Heir' cc contract transactions:
 
-* For the funding tx it is good to validate that 1 of 2 address really matches pubkeys in the opreturn
-* Obviously we should validate if the heir is allowed to spend the funds, that is either enough time has passed from the last owner activity or the heir has already begun spending (the flag is on)
+* For the funding tx it is good to validate that 1 of 2 address really matches pubkeys in the opreturn.
+* For the tx which spend the funds it is important to validate the txid in the opreturns and opreturn of the tx being spent ('vintx') which binds the tx to the contract instance data, so the txids should be equal to the initial txid.   
+* Obviously we should validate if the heir is allowed to spend the funds, that is either enough time has passed from the last owner activity or the heir has already begun spending (the flag is on).
 * Although 'Heir' cc contract is for the inheritance of the owner's funds, nothing prevents from adding more coins to the fund's address by anyone else. So we need to select only the owner transactions while checking the owner's inactivity (that is, the transactions with the owner pubkey in its vins).
 * Actually while checking these specific transaction rules we also would check opreturn format more fully.
 
-
+To get the HeirValidate() validation function activated we followed JL's 'Mastering Cryptocondition' book instructions when we added a new cc contract to the system's code.
 
 
 
