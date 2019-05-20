@@ -630,7 +630,7 @@ error message:
 16: mandatory-script-verify-flag-failed (Script evaluated without error but finished with a false/empty top stack element)
 ```
 
-In this case it is good to see at server output for more extended error:
+In this case it is good to see the server output for more extended error:
 ```
 CC Eval EVAL_HEIR Invalid: incorrect opreturn data spending tx 4b6e1ed868cf941dabf9edc7f675321bdb4258692ba02f56dc21100f88981ac4
 ERROR: CScriptCheck(): 7961fe4f9f3bdabef154404ea8ec7a11be1546febc34efe67faede8d930c0749:1 VerifySignature failed: Script evaluated without error but finished with a false/empty top stack element
