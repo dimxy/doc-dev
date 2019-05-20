@@ -163,7 +163,7 @@ Note also the functional id 'A' which marks this tx as 'add' funding transaction
 * vout.2: change to user's addr from txfee input if any
 * vout.n-1: opreturn 'C' fundingtx HasHeirSpendingBegun
 
-This tx allows to spend funds by either the funds owner or heir. It nas a normal input to add value for txfee for miners, a cc input foor spending the claimed value from 1of2 fund address.
+This tx allows to spend funds by either the funds owner or heir. It has a normal input to add value for txfee for miners, a cc input foor spending the claimed value from 1of2 fund address.
 As to outputs, the claimed value is sent to claimer's normal address, unspent change is returned to 1of2 address.
 There is also the normal change.
 Note the functional id 'C' in the opreturn. The other opreturn data are the same as in the 'add' ('A') transaction.
