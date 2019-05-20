@@ -619,6 +619,25 @@ The specific rules for 'Heir' cc contract transactions:
 To get the HeirValidate() validation function activated we followed JL's 'Mastering Cryptocondition' book instructions when we added a new cc contract to the system's code.
 
 
+### Validation code errors 
+
+During the validation code development you will probably receive validation errors when cc contract validate function returns invalid state. Here how those errors looks like:
+
+when sending raw transaction the tx is checked while added to mempool, if cc validation returns invalid state ou would see error: 
+```
+error code: -26
+error message:
+16: mandatory-script-verify-flag-failed (Script evaluated without error but finished with a false/empty top stack element)
+```
+
+In this case it is good to see at server output for more extended error:
+```
+CC Eval EVAL_HEIR Invalid: incorrect opreturn data spending tx 4b6e1ed868cf941dabf9edc7f675321bdb4258692ba02f56dc21100f88981ac4
+ERROR: CScriptCheck(): 7961fe4f9f3bdabef154404ea8ec7a11be1546febc34efe67faede8d930c0749:1 VerifySignature failed: Script evaluated without error but finished with a false/empty top stack element
+ERROR: AcceptToMemoryPool: BUG! PLEASE REPORT THIS! ConnectInputs failed against MANDATORY but not STANDARD flags 7961fe4f9f3bdabef154404ea8ec7a11be1546febc34efe67faede8d930c0749
+```
+The first line actually contains your validation code eval->invalid() message.
+
 
 ## Links to heir cc contract source code and building instructions
 
@@ -636,6 +655,7 @@ https://docs.komodoplatform.com/komodo/installation.html#installing-komodo-on-ub
 
 Instructions how to run your Komodo asset chain is here:
 https://docs.komodoplatform.com/basic-docs/installations/creating-asset-chains.html#creating-a-new-asset-chain
+
 
 ## Some used terminology
 
