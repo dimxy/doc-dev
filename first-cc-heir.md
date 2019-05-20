@@ -31,6 +31,7 @@ The next important thing in a cc contract is cryptoconditions.
 What is a cryptocondition and why it is important?
 
 ### Cryptoconditions in simple terms
+
 A cryptocondition in Komodo is basically a logical expression executed on electronic signatures and hashes of spending transactions and stored in transactions' scripts, plus a supporting c-library which allows to evaluate and check such expressions. 
 In wider sense, cryptoconditions is a technology which allows to build and evaluate complex logical expression based on results of cryptographic functions.
 
@@ -423,10 +424,12 @@ That means that it is no need further in checking the owner's inactivity time
 Once set to 'true' this flag should be set to true in the following transaction opreturns
 
 #### heiradd, heirlist and heirinfo implementation
+
 heiradd rpc allows to add more funding to the contract plan. heirlist is a standard rpc method for all cc contracts and output a list of all initial txids (funding plans).heirinfo provides some data about a funding plan. 
 The implementation for these rpcs can be found in the github repository with the source code of this contract. 
 
 #### Simplified Add1of2AddressInputs function implementation
+
 ```
 // add inputs from cc threshold=2 cryptocondition address to transaction object, src/cc/heir.cpp
 int64_t Add1of2AddressInputs(CMutableTransaction &mtx, uint256 fundingtxid, char *coinaddr, int64_t amount, int32_t maxinputs)
@@ -586,7 +589,12 @@ Return found the latest owner transaction id:
 ```
 
 #### Simplified validation function implementation
-TODO...
+
+Validation is the second important part of cc contract source code (the first is rpc functions for cc contract transaction creation) as it provide logic control of cc contract value being spent and the data being added to the block chain. 
+
+Remember that validation code is invoked when cc contract value is being spent and not while it just being added. In other words, the cc contract validation function invokation is triggered if at least of of transaction inputs has cc input with this contract eval code.
+So for the first cc contract initial transaction the validation code usually is not called. To provide validation of the initial tx you need to step back when validating the successor tx which spends that initial tx. In this step back you could load the initial tx and validate it too. If it turned out to be invalid it would remain in the chain and should be skipped and not taken into account. (If cc marker is used it might be cleared and such tx is removed from the contract instances list output.)
+
 
 ## Links to heir cc contract source code and building instructions
 The complete working example of this simplified heir cc contract vesion is here:
