@@ -1,6 +1,6 @@
-When I joined Komodo team as a cryptocondition (now rebranded as custom consensus) contract developer I was assigned my first task: to develop a 'Heir cryptocondition contract'. 
+When I joined Komodo team as a cryptocondition (now rebranded as custom consensus) contract developer I was assigned my first task: to develop a 'Heir' cryptocondition contract. 
 My acquaintance with crypto conditions began with reading James Lee's book "Mastering Cryptoconditions". I spent a weekend on reading it and got the common idea what cc contracts are. 
-But the whole scale of cc contract features and opportunities were uncovered to me later when I implemented the validation code for my Heir cc contract.
+But the whole scale of cc contract features and opportunities were uncovered to me later when I implemented the validation code for my 'Heir' cc contract.
 
 Now I'd like to share my experience with developers who want to create very efficient and powerful custom consensus contracts to help them get the matter of what custom consensus contracts are, what they can do and how to develop them.
 
@@ -10,10 +10,10 @@ It is supposed you are a c++ developer.
 For reading this article it is recommended that you have basic knowledge about bitcoin or Komodo blockchain, transaction structure and UXTO principle.  It is also good to know about script concept and especially OP_RETURN opcode as it plays important role in adding business logic to custom consensus contracts.
 
 It might be not very simple for newbie developer to understand what cryptoconditions are and what they allow. 
-I think this very simple Heir cc contract which has commonly understandable purpose of inheritance will be a good demonstation of power and features of cryptoconditions.
+I think this very simple 'Heir' cc contract which has commonly understandable purpose of inheritance will be a good demonstation of power and features of cryptoconditions.
 
 Let's learn a bit about what I needed to develop.
-The idea of the Heir cc contract was inheritance of crypto funds: if funds owner was inactive for some specified time the fund's heir might use those funds.
+The idea of the 'Heir' cc contract was inheritance of crypto funds: if funds owner was inactive for some specified time the fund's heir might use those funds.
 Okay, let's move on.
 
 ### CC contract concept
@@ -22,7 +22,7 @@ To understand cc contract idea and structure I studied well-known simple Faucet 
 
 What did I know from the first experience with a cc contract?
 
-First, I'd say it implements some business logic: in faucet cc contract this logic is about storing funds on some address and set a 'faucet' to take them back (maybe like in some advanced moneybox which would not allow spend all the funds at once). For Heir cc the business logic is inheritance of the blockchain funds.
+First, I'd say it implements some business logic: in faucet cc contract this logic is about storing funds on some address and set a 'faucet' to take them back (maybe like in some advanced moneybox which would not allow spend all the funds at once). For 'Heir' cc contract the business logic is inheritance of the blockchain funds.
 
 The next, contract's business logic is bound to transactions. In some sense transactions are a data source for cc contract application. As a usual blockchain transaction simply moves coin value from one address to another we need some place for application data to put into it. This place is so-called opreturn and it is a transaction output which is never spendable and where contract's data is stored. Usually opreturn is the last output in a transaction.
 When a cc contract instance begins its lifecycle an initial transaction is created and later additional transactions are added and attached to the initial transaction by spending its outputs. Later more transactions might be added which spend outputs of newly added transactions.
@@ -45,7 +45,7 @@ You might ask why we need this because this is already a function of any blockch
 
 Anyway, such a simple cryptocondition is only a basic feature.
 
-Cryptoconditions allows to do more. For example, another often used cryptocondition is a threshold of N which evaluates to true if a spending tx is signed with one of N possible keys. Also, application validation is possible for this too. In heir cc description further in this doc we will see what validation would allow.
+Cryptoconditions allows to do more. For example, another often used cryptocondition is a threshold of N which evaluates to true if a spending tx is signed with one of N possible keys. Also, application validation is possible for this too. In 'Heir' cc contract description further in this doc we will see what validation would allow.
 
 Cryptocondition might be a tree of subconditions which allows to build complex cryptoconditions.
 I might say that cryptoconditions technology is very advanced development of basic bitcoin script security features like pubkey or pubkey hash scripts.
@@ -101,15 +101,15 @@ The tx has also opreturn output with some contract data.
 ### CC contract SDK
 
 Although officially not called yet as SDK there is a set of functions for cc contract development. Most of it is in CCtx.cpp, CCutils.cc, cc.cpp, eval.cpp source files.
-I will describe most used functions in the following section where I decompose Heir cc contract development process.
+I will describe most used functions in the following section where I decompose 'Heir' cc contract development process.
 
-## Heir cc contract development
-In this section I describe development of a simplified version of my Heir cc contract.
-As I stated above we need to add new contract's eval code and global addresses, define heir cc contract transactions, implement the rpc interface and validation code.
+## 'Heir' cc contract development
+In this section I describe development of a simplified version of my 'Heir' cc contract.
+As I stated above we need to add new contract's eval code and global addresses, define 'Heir' cc contract transactions, implement the rpc interface and validation code.
 Adding new eval code and addresses is trivial and you might find in the 'Mastering Cryptocondions' JL's book.
 Let's continue with defining Heir cc contract transaction structure.
 
-### Heir cc transactions
+### 'Heir' cc contract transactions description
 
 Actually we need three transactions: an initial tx with which a user would create fund for inheritance, a tx for additional funding and a tx for spending funds by the owner or heir.
 I'll try to describe these tx structure with the semi-formal notation used in James Lee 'Mastering cryptocondition' book which allows to specify vins or vouts position in a tx and their description.
@@ -150,7 +150,7 @@ Specification of the rest two transactions':
 
 This transaction add more funds on the vout with 1of2 cryptocondition from normal coin inputs.
 In the opreturn the txid of the initial transaction is added to bind this tx to this contract instance (funding plan).
-There is an additional flag HasHeirSpendingBegun, which is turned to true when the Heir first time spends the inherited funding and therefore no need to wait ever again for the owner inactivity time. If this flag is still `false` the contract validation would not allow the Heir to spend funds unless the inactivity time has passed. The cryptocondition features  does not allow to check timing so it is going to be the job for the Heir cc contract validation code to check this. 
+There is an additional flag HasHeirSpendingBegun, which is turned to true when the Heir first time spends the inherited funding and therefore no need to wait ever again for the owner inactivity time. If this flag is still `false` the contract validation would not allow the heir to spend funds unless the inactivity time has passed. The cryptocondition features  does not allow to check timing so it is going to be the job for the 'Heir' cc contract validation code to check this. 
 
 Note also the functional id 'A' which marks this tx as 'add' funding transaction.
 
@@ -168,7 +168,7 @@ As to outputs, the claimed value is sent to claimer's normal address, unspent ch
 There is also the normal change.
 Note the functional id 'C' in the opreturn. The other opreturn data are the same as in the 'add' ('A') transaction.
 
-### Heir cc contract rpc implementation
+### 'Heir' cc contract rpc implementation
 Now let's develop rpc functions  to create the transactions describe in the previous section.
 
 #### heirfund rpc implementation
@@ -203,7 +203,7 @@ UniValue heirfund(const UniValue& params, bool fHelp)
 {
     CCerror.clear(); // clear global error object
 ```
-Check that the wallet and heir cc contract are available
+Check that the wallet and 'Heir' cc contract features are available in the chain
 and check the rpc params' required number:
 ```
     if (!EnsureWalletIsAvailable(fHelp))
@@ -226,7 +226,7 @@ Next convert the params from UniValue type to the basic c++ types.
 We also need to add checks that the converted param values are correct (what I ommitted in this sample), for example not negative or not exceeding some limit.
 Note how to parse hex representation of the pubkey param and convert it to CPubKey object.
 
-And now time to call the heir cc contract code and pass the returned created tx in hexademical representation to the caller, ready to be sent to the chain:
+And now time to call the 'Heir' cc contract code and pass the returned created tx in hexademical representation to the caller, ready to be sent to the chain:
 ```
     UniValue result = HeirFund(amount, name, heirpk, inactivitytime);
     RETURN_IF_ERROR(CCerror);  // use a macro to throw runtime_error if CCerror is set in HeirFund()
@@ -234,7 +234,7 @@ And now time to call the heir cc contract code and pass the returned created tx 
 }
 ```
 
-The second implementation level is located in the heir cc contract source file src/heir.cpp.
+The second implementation level is located in the 'Heir' cc contract source file src/heir.cpp.
 Here is the skeleton of the heirfund rpc implementation.
 ```
 // heirfund transaction creation code, src/cc/heir.cpp
@@ -245,7 +245,7 @@ First, we need to create a mutable version of a transaction object.
 ```
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
 ```
-Declare and initialize an CCcontract_info object with heir cc contract variables like cc global address, global private key etc.
+Declare and initialize an CCcontract_info object with 'Heir' cc contract variables like cc global address, global private key etc.
 ```
     struct CCcontract_info *cp, C;
     cp = CCinit(&C, EVAL_HEIR);
@@ -270,7 +270,7 @@ In this example we used two cc sdk functions for creating cryptocondition vouts.
 
 MakeCC1of2vout creates a vout with a threshold=2 cryptocondition allowing to spend funds from this vout with either myPubkey (which would be the pubkey of the funds owner) or heir pubkey
 
-MakeCC1vout creates a vout with a simple cryptocondition which sends a txfee to cc Heir contract global address (returned by GetUnspendable() function call). We need this output to mark the transaction and be able to find all cc heir funding plans. 
+MakeCC1vout creates a vout with a simple cryptocondition which sends a txfee to 'Heir' cc contract global address (returned by GetUnspendable() function call). We need this output to mark the transaction and be able to find all cc heir funding plans. 
 You will always need some kind of marker for any cc contract at least for contract's initial transaction, otherwise you might lose contract's data in blockchain.
 We may call this as **marker pattern** in cc development. See more about the marker pattern later in the CC contract patterns section.
 
@@ -487,7 +487,7 @@ Return the total inputs amount which has been added to the transaction vin array
 To calculate the owner inactivity time and to enable the heir to send the funds we need a function which enumerates transactions from the contract funding plan and finds the latest owner transaction.
 This is this function implementation. The input parameter passed into it is initial funding txid. The function returns the owner and heir pubkeys, the owner inactivity time and a flag if the heir has already spent the funds. 
 
-All returned values are retrieved from tx opreturns. 
+All the function returned values are retrieved from the transactions' opreturns. 
 
 ```
 // find the latest owner transaction id
@@ -590,14 +590,39 @@ Return found the latest owner transaction id:
 
 #### Simplified validation function implementation
 
-Validation is the second important part of cc contract source code (the first is rpc functions for cc contract transaction creation) as it provide logic control of cc contract value being spent and the data being added to the block chain. 
+Validation is the second important part of cc contract source code (the first is rpc functions for cc contract transaction creation) as it provides the logic control of cc contract value being spent and the data being added to the block chain. 
 
-Remember that validation code is invoked when cc contract value is being spent and not while it just being added. In other words, the cc contract validation function invokation is triggered if at least of of transaction inputs has cc input with this contract eval code.
-So for the first cc contract initial transaction the validation code usually is not called. To provide validation of the initial tx you need to step back when validating the successor tx which spends that initial tx. In this step back you could load the initial tx and validate it too. If it turned out to be invalid it would remain in the chain and should be skipped and not taken into account. (If cc marker is used it might be cleared and such tx is removed from the contract instances list output.)
+Remember that validation code is invoked for a transaction when the cc contract value is being spent and not when it just being added. In other words, the cc contract validation function invokation is triggered if at least one of a transaction inputs is a cc input with this contract eval code in it.
+So for the first cc contract initial transaction the validation code usually is not called. To provide the validation of the initial tx you need to step back when validating the successive tx which spends the initial tx. In this step back you could load the initial tx and validate it too. If it turned out to be invalid it would remain in the chain and should be skipped and not taken into account. (If cc marker is used it might be cleared and such tx is removed from the contract instances list output.)
+
+Not let's decide what validation we need for our simplified 'Heir' cc contract.
+
+Actually we have just tree transaction in this contract: initial funding, adding more value and claiming tx.
+As it was stated the inital tx could be validated together with the successive adding or claming transaction.
+
+What needs to be validated? 
+
+Here is some common rules relevant to most contracts:
+
+* Obviously first is the basic transaction structure and especially basic data structure in opreturn to ensure data integrity in the chain.
+All opreturns should contain the eval code and functional id in the first two bytes. 
+* When validating a tx, please remember about possible attacks and do not allow DOS attacks if a tx is incorrectly formed, check array size before use of it. 
+* For the tx successors and tx being spent it is important to validated the txid in their opreturns which binds the tx to the contract instance data, so it should be equal to the initial txid.   
+
+The specific rules for 'Heir' cc contract transactions:
+
+* For the funding tx it is good to validate that 1 of 2 address really matches pubkeys in the opreturn
+* Obviously we should validate if the heir is allowed to spend the funds, that is either enough time has passed from the last owner activity or the heir has already begun spending (the flag is on)
+* Although 'Heir' cc contract is for the inheritance of the owner's funds, nothing prevents from adding more coins to the fund's address by anyone else. So we need to select only the owner transactions while checking the owner's inactivity (that is, the transactions with the owner pubkey in its vins).
+* Actually while checking these specific transaction rules we also would check opreturn format more fully.
+
+
+
 
 
 ## Links to heir cc contract source code and building instructions
-The complete working example of this simplified heir cc contract vesion is here:
+
+The complete working example of this simplified heir cc contract version is here:
 https://github.com/dimxy/komodo/tree/heir-simple, 
 The source files are:
 src/cc/heir.cpp
@@ -631,7 +656,7 @@ Here is some terms and keywords which are used in the cc documentation, develope
 
 ## CC contract patterns
 
-Earlier I wrote about the marker pattern. Here I'd like collect other useful patterns (including the marker pattern too) which could be used in the development of custom consensus contracts.
+Earlier I wrote about the marker pattern. Here I'd like collect other useful patterns (including the marker pattern too) which are useful in the development of custom consensus contracts.
 
 ### Baton pattern
 Baton pattern allows to organize a single-linked list in a blockchain. Starting from the first tx in a list we may iterate the other transactions in the list and retrieve the values stored in their opreturns.
