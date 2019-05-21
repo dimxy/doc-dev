@@ -338,12 +338,14 @@ Lock the wallet:
 ```
     LOCK2(cs_main, pwalletMain->cs_wallet);
 ```
-Convert the parameters from UniValue to c++ types and call the tx creation function and return the created tx in hexademical
+Convert the parameters from UniValue to c++ types: 
 ```
     uint256 fundingtxid = Parseuint256((char*)params[0].get_str().c_str());
     CAmount amount = atof(params[1].get_str().c_str()) * COIN;  // Note conversion from satoshis to coins by multiplication by 10E8
-
-    UniValue result = HeirClaimCaller(fundingtxid, amount);
+```
+Call the claim tx creation function and return the created tx in hexademical
+```
+    UniValue result = HeirClaim(fundingtxid, amount);
     RETURN_IF_ERROR(CCerror);  // use a macro to throw runtime_error if CCerror is set in HeirFund()
     return result;
 }
