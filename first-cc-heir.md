@@ -879,12 +879,6 @@ Use hidden `reconsiderblock` komodo-cli command to restart syncing from the bloc
 If komodod hangs in cc contract validation code you should know that some blockchain functions use locks and might cause deadlocks. You should check with this functions and use non-locking versions.
 An example of such function is GetTransaction(). Instead you should use myGetTransaction() or eval->GetConfirmed()
 
-## TODO
-### Contract architecture extending for token support
-My contract should work both with coins and tokens. The program logic for inheritance coins and tokens was very the same, so I used templates for contract functions which were extended in specific points to deal either with coins or tokens (like to make opreturn and cc vouts)
+## What next? Contract architecture extending for token support
+My contract should work both with coins and tokens. The program logic for inheritance coins and tokens was very the same, so I used templates for contract functions which were extended in specific points to deal either with coins or tokens (like to make opreturn and cc vouts). In the next part of this tutorial I will show ho to deal with tokens.
 
-### Contract validation code description
-For validation of Heir cc contract tx I implemented a small object-oriented 'chain of responsibility' framework.
-It allows to develop a small vin or vout validator programs independently on the tx structure and set up binding of the validators to tx vin/vout and vintx vout structure. It also provides re-use of validators.
-
-_to be continued..._
