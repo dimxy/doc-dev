@@ -682,13 +682,15 @@ Return invalid as we never could get here for the initial or add funding tx:
 Validation for claiming transaction:
 ```
     case 'C':
-        // check if correct funding txns are being spent, 
-        // like they belong to this contract instance
+```
+Check if the correct funding txns are being spent, like this txns are from this contract instance identified by fundingtxid
+```
         if (!CheckSpentTxns(cpHeir, eval, tx, fundingtxid))
             return false;
-
-        // if it is heir claiming the funds check if he is allowed
-        // also check if the new flag is set correctly
+```
+If the heir claiming the funds check whether he is allowed to do this (inactivity time passed or he has already begun spending)
+Also check if the new flag hasHeirSpendingBegun is set correctly:
+```
         if (!CheckInactivityTime(cpHeir, eval, tx, latesttxid, inactivityTimeSec, heirPubkey, lastHeirSpendingBegun, hasHeirSpendingBegun) )
             return false;
         break;
