@@ -514,17 +514,15 @@ Init some variables:
     std::vector<uint8_t> vopret;
     std::string name;
 ```
-Load the initial funding tx, check if it has an opreturn and deserialize it:
+Load the initial funding tx, check if it has a correct opreturn and deserialize it. 
+Check tx rules and return empty id if the funding tx could not be loaded or is incorrect:
 ```
     if (!myGetTransaction(fundingtxid, fundingtx, hashBlock) ||  // NOTE: use non-locking version of GetTransaction as we may be called from validation code
-        fundingtx.vout.size() == 0 ||
-        !GetOpReturnData(fundingtx.vout.back().scriptPubKey, vopret) ||
-        !E_UNMARSHAL(vopret, ss >> eval; ss >> funcId; ss >> ownerPubkey; ss >> heirPubkey; ss >> inactivityTime; ss >> name;) ||
-        eval != EVAL_HEIR || 
-        funcId != 'F')
-```
-Return empty id if the fundind tx is incorrect:
-```
+        fundingtx.vout.size() == 0 ||    // no vouts, even opreturn
+        !GetOpReturnData(fundingtx.vout.back().scriptPubKey, vopret) ||   // could not get opreturn from the last vout
+        !E_UNMARSHAL(vopret, ss >> eval; ss >> funcId; ss >> ownerPubkey; ss >> heirPubkey; ss >> inactivityTime; ss >> name;) ||  // could not unmarshal opreturn
+        eval != EVAL_HEIR ||   // incorrect eval code in 1st byte 
+        funcId != 'F')    // incorrect funcid in the 2nd byte
         return zeroid;
 ```   
 Init cc contract object for heir contract eval code:
