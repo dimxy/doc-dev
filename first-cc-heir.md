@@ -81,8 +81,8 @@ That being said, for a cc contract development you would need:
 
 A cc contract is actually a c/c++ source file. The one part of is an rpc (remote procedure call) implementation code that either creates the contract's transactions or gets info about contract state (from existing transactions). So when you deploy your contract (actually adding its code to the Komodo source code) your rpc calls are added to komodo-cli client command line.
 
-Basically all contracts have two methods xxxlist and xxxinfo <initialtxid>.
-xxxlist lists all initial transactions providing a key (inital txid) to an instance of cc contract data and xxxinfo outputs some info about a contract instance.
+Basically all contracts have two methods xxxlist and xxxinfo \<initialtxid\>.
+xxxlist rpc lists all initial transactions providing a key (inital txid) to an instance of cc contract data and xxxinfo outputs some info about a contract instance.
 
 The other essential part of a cc contract is validation code. It will be uncovered later.
 
