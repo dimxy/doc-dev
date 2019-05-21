@@ -172,7 +172,7 @@ Note the functional id 'C' in the opreturn. The other opreturn data are the same
 Now let's develop rpc functions  to create the transactions describe in the previous section.
 
 #### heirfund rpc implementation
-To make a rpc call we would need its name and parameters. For rpc to create an initial tx I chose the name of 'heirfund' and its parameters are derived from the defined tx structure:
+To make a rpc call we would need its name and parameters. For rpc creating an initial tx I chose the name of 'heirfund' and its parameters are derived from the defined tx structure. The syntax is:
 ```
 komodo-cli -ac_name=YOURCHAIN heirfund amount name heirpubkey inactivitytime
 ```
@@ -196,7 +196,7 @@ The first level is short rpc function which name matches to the rpc command name
 
 I created rpc-level code in the wallet/rpcwallet.cpp file although it is much better to create a new rpc source file for each new cc contract's rpc functions.
 
-First rpc-level implementation
+heirfund first rpc level implementation:
 ```
 // heirfund command rpc-level implementation, src/wallet/rpcwallet.cpp
 UniValue heirfund(const UniValue& params, bool fHelp)
@@ -213,6 +213,10 @@ and check the rpc params' required number:
     // output help message if asked or params count is incorrect:
     if (fHelp || params.size() != 4 )
         throw runtime_error("heirfund funds heirname heirpubkey inactivitytime\n");
+```	
+Lock the user's wallet:
+```
+    LOCK2(cs_main, pwalletMain->cs_wallet);	
 ```
 The UniValue object is a special type for passing data in rpc calls. Univalue params is actually an array of Univalue objects. We still need to convert them into usual c/c++ language types and pass to the contract implementation.
 Next convert the params from UniValue type to the basic c++ types. 
@@ -300,7 +304,7 @@ Now let's develop an rpc for claiming the funds.
 #### heirclaim implementation
 
 Again, this implementation will be two-level, with the first level to check the required environment and converting the parameters and the second level to create claiming transaction.
-the heirclaim rpc call will be very simple:
+the heirclaim rpc call syntax is very simple:
 ```
 komodo-cli -ac_name=YOURCHAIN heirclaim fundingtxid amount
 ```
@@ -425,7 +429,7 @@ Once set to 'true' this flag should be set to true in the following transaction 
 
 #### heiradd, heirlist and heirinfo implementation
 
-heiradd rpc allows to add more funding to the contract plan. heirlist is a standard rpc method for all cc contracts and output a list of all initial txids (funding plans).heirinfo provides some data about a funding plan. 
+The command `heiradd` allows to add more funding to the contract plan. The rpc command `heirlist` is a standard rpc method for all cc contracts and output a list of all initial txids (funding plans). The command `heirinfo` provides some data about a funding plan. 
 The implementation for these rpcs can be found in the github repository with the source code of this contract. 
 
 #### Simplified Add1of2AddressInputs function implementation
