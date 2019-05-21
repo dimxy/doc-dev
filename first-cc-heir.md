@@ -672,25 +672,22 @@ Just log we are in the validation code:
 Validation rules specific for each funcid:
 ```
     switch (funcId) {
+```
+For F and A return invalid as we never could get here for the initial or add funding tx:
+```    
     case 'F':
     case 'A':
-```
-Return invalid as we never could get here for the initial or add funding tx:
-```
         return eval->Invalid("unexpected HeirValidate for heirfund");
 ```
 Validation for claiming transaction:
 ```
     case 'C':
-```
-Check if the correct funding txns are being spent, like this txns are from this contract instance identified by fundingtxid
-```
+	// Check if the correct funding txns are being spent, like this txns are from this contract instance identified by fundingtxid
         if (!CheckSpentTxns(cpHeir, eval, tx, fundingtxid))
             return false;
-```
-If the heir claiming the funds check whether he is allowed to do this (inactivity time passed or he has already begun spending)
-Also check if the new flag hasHeirSpendingBegun is set correctly:
-```
+	// If the heir claiming the funds check whether he is allowed to do this 
+	// (inactivity time passed or he has already begun spending)
+        // Also check if the new flag hasHeirSpendingBegun is set correctly:
         if (!CheckInactivityTime(cpHeir, eval, tx, latesttxid, inactivityTimeSec, heirPubkey, lastHeirSpendingBegun, hasHeirSpendingBegun) )
             return false;
         break;
