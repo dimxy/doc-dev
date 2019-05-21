@@ -106,10 +106,10 @@ I will describe most used functions in the following section where I decompose '
 ## 'Heir' cc contract development
 In this section I describe development of a simplified version of my 'Heir' cc contract.
 As I stated above we need to add new contract's eval code and global addresses, define 'Heir' cc contract transactions, implement the rpc interface and validation code.
-Adding new eval code and addresses is trivial and you might find in the 'Mastering Cryptocondions' JL's book.
-Let's continue with defining Heir cc contract transaction structure.
+Adding new eval code and addresses is the same for all cc contracts and you might find hoe to do this in JL's 'Mastering Cryptocondions' book.
+Let's continue with defining 'Heir' cc contract transactions. 
 
-### 'Heir' cc contract transactions description
+### 'Heir' cc contract transactions
 
 Actually we need three transactions: an initial tx with which a user would create fund for inheritance, a tx for additional funding and a tx for spending funds by the owner or heir.
 I'll try to describe these tx structure with the semi-formal notation used in James Lee 'Mastering cryptocondition' book which allows to specify vins or vouts position in a tx and their description.
@@ -616,7 +616,97 @@ The specific rules for 'Heir' cc contract transactions:
 * Although 'Heir' cc contract is for the inheritance of the owner's funds, nothing prevents from adding more coins to the fund's address by anyone else. So we need to select only the owner transactions while checking the owner's inactivity (that is, the transactions with the owner pubkey in its vins).
 * Actually while checking these specific transaction rules we also would check opreturn format more fully.
 
-To get the HeirValidate() validation function activated we followed JL's 'Mastering Cryptocondition' book instructions when we added a new cc contract to the system's code.
+To get the HeirValidate() validation function activated for the 'Heir cc contract eval code we followed JL's 'Mastering Cryptocondition' book instructions while we added a new cc contract to the system's code.
+
+This is HeirValidate implementation:
+```
+// Tx validation entry function, it is a callback actually
+// params: 
+// cpHeir pointer to contract variable structure
+// eval pointer to cc dispatching object, used to return invalid state
+// tx is the tx itself
+// nIn not used in validation code
+bool HeirValidate(struct CCcontract_info* cpHeir, Eval* eval, const CTransaction& tx, uint32_t nIn)
+{
+```
+Common validation rules for all funcid.
+First let's check basic tx structure, that is, has opreturn with correct basic evalcode and funcid
+Note: we do not check for 'F' or 'A' funcids because we never get into validation code for the initial tx or for an add tx as they have no heir cc vins ever:
+```
+    std::vector <uint8_t> vopret;
+    if( tx.vout.size() < 1 || !GetOpReturnData(tx.vout.back().scriptPubKey, vopret) || vopret.size() < 2 || vopret.begin()[0] != EVAL_HEIR || 
+        vopret.begin()[1] != 'C')
+        // interrupt the validation and return invalid state:
+        return eval->Invalid("incorrect or no opreturn data");  // note that you should not return simply 'false'
+```
+Let's try to decode tx opreturn, fundingtxid is this contract instance id (the initial tx id):
+```
+    uint8_t evalcode, funcId;
+    uint256 fundingtxid; //initialized to null
+    uint8_t hasHeirSpendingBegun;
+    if (!E_UNMARSHAL(vopret, ss >> evalcode; ss >> funcId; ss >> fundingtxid; ss >> hasHeirSpendingBegun;))
+        // return invalid state if unserializing function returned false:
+        return eval->Invalid("incorrect opreturn data");
+```
+Important to check if fundingtxid parsed is okay:
+```
+    if( fundingtxid.IsNull() )
+        return eval->Invalid("incorrect funding plan id in tx opret");
+```
+It is good place to load the initial tx and check if it exist and has correct opretun
+We are callinng FindLatestOwnerTx function to obtain opreturn parameters and hasHeirSpendingBegun flag,
+and this function also checks the initial tx:
+```
+    CPubKey ownerPubkey, heirPubkey;
+    int64_t inactivityTimeSec;
+    uint8_t lastHeirSpendingBegun;
+    uint256 latesttxid = FindLatestOwnerTx(fundingtxid, ownerPubkey, heirPubkey, inactivityTimeSec, lastHeirSpendingBegun);
+    if (latesttxid.IsNull()) {
+        return eval->Invalid("no or incorrect funding tx found");
+    }
+```
+Just log we are in the validation code:
+```
+    std::cerr << "HeirValidate funcid=" << (char)funcId << " evalcode=" << (int)cpHeir->evalcode << std::endl;
+```
+Validation rules specific for each funcid:
+```
+    switch (funcId) {
+    case 'F':
+    case 'A':
+```
+Return invalid as we never could get here for the initial or add funding tx:
+```
+        return eval->Invalid("unexpected HeirValidate for heirfund");
+```
+Validation for claiming transaction:
+```
+    case 'C':
+        // check if correct funding txns are being spent, 
+        // like they belong to this contract instance
+        if (!CheckSpentTxns(cpHeir, eval, tx, fundingtxid))
+            return false;
+
+        // if it is heir claiming the funds check if he is allowed
+        // also check if the new flag is set correctly
+        if (!CheckInactivityTime(cpHeir, eval, tx, latesttxid, inactivityTimeSec, heirPubkey, lastHeirSpendingBegun, hasHeirSpendingBegun) )
+            return false;
+        break;
+```
+For unsupported funcids return invalid state:
+```
+    default:
+        std::cerr << "HeirValidate() illegal heir funcid=" << (char)funcId << std::endl;
+        return eval->Invalid("unexpected HeirValidate funcid");
+    }
+```
+All rules are passed return okay:
+```
+    return eval->Valid();   
+}
+```
+
+Supporting functions CheckSpentTxns and CheckInactivityTime both are in heir.cpp source
 
 
 ### Validation code errors 
