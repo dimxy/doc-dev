@@ -16,7 +16,7 @@ Let's learn a bit about what I needed to develop.
 The idea of the 'Heir' cc contract was inheritance of crypto funds: if funds owner was inactive for some specified time the fund's heir might use those funds.
 Okay, let's move on.
 
-### CC contract concept
+### CC contract concepts
 
 To understand cc contract idea and structure I studied well-known simple Faucet cc contract which actually allows to lock some amount of funds on a crypto condition address and draw funds by small portions. The Faucet cc does not allow to do this fast as it requires to do some PoW for successful funds drawing.
 
