@@ -1,9 +1,11 @@
 This is a second part of the tutorial how to write a cc contract.
-Now I would like to show how to add token support into Custom Consensus (cc) contract in Komodo asset chain.
+Now I would like to show how to add token support into Custom Consensus (cc) contract in a Komodo asset chain.
+In the first part we learnt how to implement crypto inheritance in 
 
-What is actually a token?
 
-Tokens's another name is also 'colored coin' what I would explain as 'coins with some additional info'. Buth there is another difference: 
+## What is actually a token?
+
+Tokens's another name is also 'colored coin' what I would explain as 'coins with some additional info'. But there is another difference: 
 token is not mined but issued by an individual who just has public and private key and some coins in a blockchain which supports tokens.
 Usually the purpose of a token is to represent in a blockchain some real-world asset which usually is owned by the token issuer like shares and tickets, wheat and oil, cars and houses, or even fiat money pegged to a token.
 So a token has its issuer and it has some attached description of the assets which this token represents. Obviously token ownership could be transferred to another individual in exchange for coins or simply as a gift. 
@@ -12,7 +14,7 @@ To issue and transfer a token we would need to create and mine token transaction
 
 In Komodo world blockchains where tokens live are called 'asset chains'.
 
-So what is technically a Komodo asset chain token?
+## So what is technically a Komodo asset chain token?
 
 One of the differencies of tokens from coins is that it contains some attached data.
 We already know that we might put such data in transaction opreturn which is an unspendable output. It is unspendable thankfully to a special OP_RETURN opcode in transaction scriptPubKey which actually cancels the script interpretation when it is encountered. We can do  this for tokens too.
@@ -32,4 +34,13 @@ There is a Tokens cc contract which is reponsible for validation of token tx. Th
 Tokens may be used with other cc contracts, for this such a contract eval code (for instance, EVAL_ASSETS) is also added to token vouts, which provides that both Tokens contract and this contract validation functions are executed when such a vout is being spent.
 
 Tokens could be fungible and non-fungible.
+
+## How to add token support to a cc already working with coins
+
+
+
+Actually 
+
+
+
 
