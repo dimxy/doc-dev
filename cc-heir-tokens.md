@@ -1,7 +1,6 @@
 This is a second part of the tutorial how to write a cc contract.
 Now I would like to show how to add token support into Custom Consensus (cc) contract in a Komodo asset chain.
-In the first part we learnt how to implement crypto inheritance in 
-
+In the first part we learnt how to implement crypto inheritance in Heir cc contract. Now let's add token support to it.
 
 ## What is actually a token?
 
@@ -27,7 +26,7 @@ The id of tokenbase transaction becomes the identifier of the token (\`tokenid\`
 
 Later some token amount might be transferred to another public key via a token transaction. Such token transactions will always have an opreturn with tokenid in with which the transaction is marked as token tx. 
 
-The current token balance of a pubkey is a value calculated for all its token utxos. A token utxo has some value and the token eval code (EVAL_TOKENS) cryptocondition in the scriptPubKey. 
+The current token balance of a pubkey is a value calculated for all its token utxos. A token utxo has some value and the tokens eval code (EVAL_TOKENS) cryptocondition in the scriptPubKey. 
 
 There is a Tokens cc contract which is reponsible for validation of token tx. This validation is triggered when a token tx spending another token utxo, with token eval code in its vins, is added to the asset chain.
 
@@ -35,11 +34,16 @@ Tokens may be used with other cc contracts, for this such a contract eval code (
 
 Tokens could be fungible and non-fungible.
 
-## How to add token support to a cc already working with coins
+Support for tokens is essential part of Custom Consensus contract application.
+
+## How to add token support to a cc contract already working with coins
+
+The logic of working with tokens is very similar to working with coins, the differencies are in cc sdk calls which are specific for coins and tokens.
+So we might make conditional code or use OOP-style virtual functions or templates.
+I prefer templates.
 
 
 
-Actually 
 
 
 
