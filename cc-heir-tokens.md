@@ -15,14 +15,21 @@ In Komodo world blockchains where tokens live are called 'asset chains'.
 So what is technically a Komodo asset chain token?
 
 One of the differencies of tokens from coins is that it contains some attached data.
-We already know that we might put such data in transaction opreturn which is an unspendable output. It is unspendable thankfully to a special OP_RETURN opcode in transaction scriptPubKey which actually cancels the script interpretation when it is encountered.
+We already know that we might put such data in transaction opreturn which is an unspendable output. It is unspendable thankfully to a special OP_RETURN opcode in transaction scriptPubKey which actually cancels the script interpretation when it is encountered. We can do  this for tokens too.
 
-Komodo token is actually value calculated from a number of token uxtos. A token uxto has some value and the token eval code (EVAL_TOKENS) cryptocondition in the scriptPubKey. A token is also identified with a tokenid which is the txid of the first token transaction (tokenbase). For every other token tx (that is not tokenbase) the tokenid is stored in the tx opreturn vout. Such opreturn vout is present in every token tx.
+Komodo token begins with a token creation transaction ('tokenbase') where the issuer puts token name and description. All the initial amount is allocated with the creation tx and never can be added (but might be burned). 
 
-Tokenbase tx also has basic token parameters (name, description and issuer pubkey).
+When a token is created the owner converts some of his normal coins to tokens (with rate 1 satoshi == 1 token).
 
-Tokens cc contract is reponsible for validation of token tx. This validation is triggered when a token tx, with token eval code in its vins, is added to blockchain.
+The id of tokenbase transaction becomes the identifier of the token (\`tokenid\`)
 
-When a token is created the owner actually converts his normal coins to tokens (with rate 1 satoshi == 1 token).
+Later some token amount might be transferred to another public key via a token transaction. Such token transactions will always have an opreturn with tokenid in with which the transaction is marked as token tx. 
+
+Current token balance of a pubkey is actually a value calculated for all its token utxos. A token utxo has some value and the token eval code (EVAL_TOKENS) cryptocondition in the scriptPubKey. 
+
+There is a Tokens cc contract which is reponsible for validation of token tx. This validation is triggered when a token tx spending another token utxo, with token eval code in its vins, is added to the asset chain.
 
 Tokens may be used with other cc contracts, for this such a contract eval code (for instance, EVAL_ASSETS) is also added to token vouts, which provides that this contract validation is triggered for token tx, too.
+
+Tokens could be fungible and non-fungible.
+
