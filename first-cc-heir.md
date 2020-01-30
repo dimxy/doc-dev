@@ -92,7 +92,7 @@ This eval code is actually a simple cryptocondition which is a byte value and is
 ### CC contract transaction structure
 Here on the diagram is a cc contract transaction structure sample.
 
-![cc tx structure](https://github.com/dimxy/images/blob/master/cc-tx-structure-for-guide-v7.png)
+![cc tx structure](https://github.com/dimxy/images/blob/master/cc-tx-structure-for-guide-v3.2.png)
 
 We can see on the diagram that cc transaction has one or more cryptocondition inputs (or vins) and one or more cryptocondition outputs (or vouts). 
 A cc input with cryptocondition contain the txid of a previous transaction which cc output is spent and a cryptocondition fulfillment which is evaluated when this tx is added to the blockchain. The previous tx cc output has the corresponding cryptocondition which value should match to the evaluated input cryptocondition fulfillment while validation occurs.
